@@ -1,0 +1,3 @@
+TOKEN_FILE = ".token"
+API_BASE = "http://127.0.0.1:31009/v1"
+API_VERSION = "2025-05-20"
