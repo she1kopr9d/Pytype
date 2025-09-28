@@ -122,18 +122,3 @@ PyType поддерживает простую систему модулей:
 4. Вывод в консоле
 (Console output)
 ![](docs/img/console.png)
-
-
-## Структура проекта (Project structure)
-
-Pytype/  
-├── main.py              # Точка входа приложения (Application entry point)  
-├── anytype/             # Основной пакет (Main package)  
-│   ├── __init__.py      # Конфигурация API (API configuration)  
-│   ├── macros.py        # Основная логика выполнения (Execution logic)  
-│   ├── token.py         # Управление токенами (Token management)  
-│   ├── queryes.py       # API запросы к Anytype (Anytype API requests)  
-│   ├── utils.py         # Вспомогательные функции (Helper functions)  
-│   ├── sandbox.py       # Песочница для выполнения (Execution sandbox)  
-│   └── space.py         # Работа с пространствами (Workspace management)  
-└── README.md  

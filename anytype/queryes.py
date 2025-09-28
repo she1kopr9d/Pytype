@@ -1,6 +1,7 @@
 import requests
 
 import anytype
+import anytype.builder
 
 
 class QuerySession:
@@ -51,6 +52,18 @@ class BaseQuery():
         return self.__query
 
 
+class SpaceRequireQuery(BaseQuery):
+    __space_id: str
+
+    @property
+    def space_id(self):
+        return self.__space_id
+
+    def __init__(self, query: QuerySession, space_id: str):
+        self.__space_id = space_id
+        super().__init__(query)
+
+
 class SpaceQuery(BaseQuery):
 
     def __init__(self, query: QuerySession) -> None:
@@ -60,13 +73,7 @@ class SpaceQuery(BaseQuery):
         return super().get_query().request("GET", "/spaces").get("data", [])
 
 
-class PageQuery(BaseQuery):
-    __space_id: str
-
-    def __init__(self, query: QuerySession, space_id: str) -> None:
-        self.__space_id = space_id
-        super().__init__(query)
-
+class PageQuery(SpaceRequireQuery):
     def get_pages(
         self,
         limit: int = 50,
@@ -79,7 +86,7 @@ class PageQuery(BaseQuery):
         payload = {}
         return super().get_query().request(
             "GET",
-            f"/spaces/{self.__space_id}/objects",
+            f"/spaces/{super().space_id}/objects",
             params=params,
             json=payload,
         ).get("data", [])
@@ -91,7 +98,7 @@ class PageQuery(BaseQuery):
         params = {}
         return super().get_query().request(
             "GET",
-            f"/spaces/{self.__space_id}/objects/{object_id}",
+            f"/spaces/{super().space_id}/objects/{object_id}",
             params=params,
         )
 
@@ -116,74 +123,137 @@ class PageQuery(BaseQuery):
         }
         return super().get_query().request(
             "POST",
-            f"/spaces/{self.__space_id}/search",
+            f"/spaces/{super().space_id}/search",
             params=params,
             json=payload,
         )
 
-    def search_by_tags(
+
+class TypeQuery(SpaceRequireQuery):
+    def get_all(self) -> dict:
+        return super().get_query().request(
+            "GET",
+            f"/spaces/{self.space_id}/types/",
+        )
+
+
+class PropertyQuery(SpaceRequireQuery):
+    def get_all(self) -> dict:
+        return super().get_query().request(
+            "GET",
+            f"/spaces/{self.space_id}/properties/",
+        )
+
+    def get_id_by_name(self, name: str) -> str:
+        return [
+            prop["id"]
+            for prop in self.get_all()["data"]
+            if prop["name"] == name
+        ][0]
+
+
+class TagQuery(SpaceRequireQuery):
+    def get_all(
         self,
-        limit: int = 50,
-        offset: int = 0,
-        tag: dict = None,
-    ) -> list[dict]:
-        params = {
-            "limit": limit,
-            "offset": offset
-        }
-        print(tag)
-        payload = {
-            "query": "",
-            "sort": {
-                "direction": "desc",
-            },
-            "types": [
-                "Pyruns",
-            ]
-        }
+        prop_id: str | None = None
+    ) -> dict:
+        if prop_id is None:
+            prop_query = PropertyQuery(query=self.get_query(), space_id=self.space_id)
+            prop_id = prop_query.get_id_by_name("Tag")
+        return super().get_query().request(
+            "GET",
+            f"/spaces/{self.space_id}/properties/{prop_id}/tags",
+        )
+
+    def get_ids_by_names(
+        self,
+        names: list[str],
+        prop_id: str | None = None
+    ) -> list[str]:
+        return [
+            tag["id"]
+            for tag in self.get_all(prop_id=prop_id)["data"]
+            if any([
+                tag["name"] == name
+                for name in names
+            ])
+        ]
+
+
+class TemplateQuery(SpaceRequireQuery):
+    def get_id_by_name(self, name: str) -> str:
+        type_query = TypeQuery(super().get_query(), self.space_id)
+        return [
+            obj["id"]
+            for obj in type_query.get_all()["data"]
+            if obj["name"] == name
+        ][0]
+
+    def get_all_for_type(
+        self,
+        type_id: str | None = None,
+        type_name: str | None = None,
+    ) -> dict:
+        if type_id is None:
+            type_id = self.get_id_by_name(type_name)
+        return super().get_query().request(
+            "GET",
+            f"/spaces/{self.space_id}/types/{type_id}/templates",
+        )
+
+    def get_by_name(
+        self,
+        template_name: str,
+        type_id: str | None = None,
+        type_name: str | None = None,
+        templates: list | None = None,
+    ):
+        if templates is None:
+            templates = self.get_all_for_type(
+                type_id=type_id,
+                type_name=type_name,
+            )
+        return [
+            temp
+            for temp in templates["data"]
+            if temp["name"] == template_name
+        ][0]
+
+
+class CreateQuery(SpaceRequireQuery):
+    def create(
+        self,
+        body: str = "",
+        emoji: str = "📄",
+        name: str = "file",
+        description: str = "",
+        height: int = 42,
+        tag_ids: list[str] | None = None,
+        tag_names: list[str] | None = None,
+        template_id: str | None = None,
+        template_name: str | None = None,
+        type_key: str = "page",
+        type_name: str = "Page",
+    ):
+        if template_name is not None:
+            temp_query = TemplateQuery(self.get_query(), self.space_id)
+            template_id = temp_query.get_by_name(
+                template_name=template_name,
+                type_name=type_name,
+            )["id"]
+        if tag_names is not None:
+            tag_query = TagQuery(self.get_query(), self.space_id)
+            tag_ids = tag_query.get_ids_by_names(names=tag_names)
+        data = anytype.builder.create_object(
+            body="test",
+            name="test name",
+            description="test disc",
+            type_key="page",
+            tag_ids=tag_ids,
+            template_id=template_id,
+        )
         return super().get_query().request(
             "POST",
-            f"/spaces/{self.__space_id}/search",
-            params=params,
-            json=payload,
+            f"/spaces/{super().space_id}/objects",
+            json=data,
         )
-
-
-class PropertyQuery(BaseQuery):
-    __space_id: str
-
-    def __init__(self, query: QuerySession, space_id: str) -> None:
-        self.__space_id = space_id
-        super().__init__(query)
-
-    def get_properties(
-        self,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[dict]:
-        params = {}
-        return super().get_query().request(
-            "GET",
-            f"/spaces/{self.__space_id}/properties",
-            params=params,
-        ).get("data", [])
-
-
-class TagQuery(BaseQuery):
-    __space_id: str
-
-    def __init__(self, query: QuerySession, space_id: str) -> None:
-        self.__space_id = space_id
-        super().__init__(query)
-
-    def get_tags(
-        self,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> list[dict]:
-        params = {}
-        return super().get_query().request(
-            "GET",
-            f"/spaces/{self.__space_id}/properties/bafyreigkzaf2tcacw6uyss7hg7kjg2u5ntujczzk6ycds2kbqtoafy2yam/tags",
-            params=params,
-        ).get("data", [])
