@@ -5,7 +5,7 @@ import anytype
 def get_spaces(token):
     headers = {
         "Authorization": f"Bearer {token}",
-        "Anytype-Version": anytype.API_VERSION
+        "Anytype-Version": anytype.API_VERSION,
     }
     resp = requests.get(f"{anytype.API_BASE}/spaces", headers=headers)
     resp.raise_for_status()

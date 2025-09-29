@@ -19,16 +19,15 @@ def create_object(
         },
     ]
     if tag_ids is not None:
-        properties.append({
-            "key": "tag",
-            "multi_select": tag_ids,
-        })
+        properties.append(
+            {
+                "key": "tag",
+                "multi_select": tag_ids,
+            }
+        )
     return {
         "body": body,
-        "icon": {
-            "emoji": emoji,
-            "format": "emoji"
-        },
+        "icon": {"emoji": emoji, "format": "emoji"},
         "name": name,
         "properties": properties,
         "template_id": template_id,

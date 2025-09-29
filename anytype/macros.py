@@ -10,10 +10,7 @@ def init_namespace(files: list[str]) -> tuple[dict, list]:
         for file in files
         if file.split("\n")[0][2:] != "__main__"
     }
-    mains = [
-        file for file in files
-        if file.split("\n")[0][2:] == "__main__"
-    ]
+    mains = [file for file in files if file.split("\n")[0][2:] == "__main__"]
     return (data, mains)
 
 
@@ -69,7 +66,7 @@ def pyrun(arvg: list[str] | None = None) -> None:
         code = anytype.utils.extract_code_in_markdown(
             page["object"]["markdown"]
         )
-        code = code[code.index("#"):]
+        code = code[code.index("#") :]
         scripts.append(code)
     namespace, mains = init_namespace(scripts)
     namespace = replace_include(namespace)
