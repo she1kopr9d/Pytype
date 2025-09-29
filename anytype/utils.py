@@ -1,10 +1,22 @@
-import anytype.queryes
+import random
+
+import anytype.types
+
+
+def random_color():
+    return random.choice(list(anytype.types.TagColorEnum))
+
+
+def random_hex6(uppercase=False):
+    fmt = "{:06X}" if uppercase else "{:06x}"
+    return fmt.format(random.getrandbits(24))
 
 
 def get_space_id(
-    space_query: anytype.queryes.SpaceQuery,
+    space_query,
     num: int = 0,
 ) -> str:
+    import anytype.queryes # noqa
     if num >= 0:
         spaces = space_query.get_spaces()
         if not spaces:

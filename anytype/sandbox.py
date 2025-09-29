@@ -7,6 +7,9 @@ from anytype.queryes import (
     PropertyQuery,
     TagQuery,
 )
+from anytype.types import (
+    TagColorEnum,
+)
 
 PQ = PageQuery
 CQ = CreateQuery
@@ -14,6 +17,8 @@ TempQ = TemplateQuery
 TQ = TypeQuery
 PropQ = PropertyQuery
 TagQ = TagQuery
+Color = TagColorEnum
+
 
 def sandbox(
     code: str,

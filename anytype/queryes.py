@@ -2,6 +2,8 @@ import requests
 
 import anytype
 import anytype.builder
+import anytype.utils
+import anytype.types
 
 
 class QuerySession:
@@ -153,13 +155,16 @@ class PropertyQuery(SpaceRequireQuery):
 
 
 class TagQuery(SpaceRequireQuery):
+    def get_tag_prop_id(self) -> str:
+        prop_query = PropertyQuery(query=self.get_query(), space_id=self.space_id)
+        return prop_query.get_id_by_name("Tag")
+
     def get_all(
         self,
         prop_id: str | None = None
     ) -> dict:
         if prop_id is None:
-            prop_query = PropertyQuery(query=self.get_query(), space_id=self.space_id)
-            prop_id = prop_query.get_id_by_name("Tag")
+            prop_id = self.get_tag_prop_id()
         return super().get_query().request(
             "GET",
             f"/spaces/{self.space_id}/properties/{prop_id}/tags",
@@ -178,6 +183,41 @@ class TagQuery(SpaceRequireQuery):
                 for name in names
             ])
         ]
+
+    def create(
+        self,
+        tag_name: str,
+        tag_color: anytype.types.TagColorEnum | None = None,
+        prop_id: str | None = None
+    ) -> dict:
+        if tag_color is None:
+            tag_color = anytype.utils.random_color()
+        if prop_id is None:
+            prop_id = self.get_tag_prop_id()
+        data = {
+            "color": tag_color.value,
+            "name": tag_name,
+        }
+        return self.get_query().request(
+            "POST",
+            f"/spaces/{self.space_id}/properties/{prop_id}/tags",
+            json=data,
+        )
+
+    def delete(
+        self,
+        tag_name: str | None = None,
+        tag_id: str | None = None,
+        prop_id: str | None = None,
+    ) -> dict:
+        if prop_id is None:
+            prop_id = self.get_tag_prop_id()
+        if tag_id is None:
+            tag_id = self.get_ids_by_names(names=[tag_name], prop_id=prop_id)[0]
+        return self.get_query().request(
+            "DELETE",
+            f"/spaces/{self.space_id}/properties/{prop_id}/tags/{tag_id}"
+        )
 
 
 class TemplateQuery(SpaceRequireQuery):
