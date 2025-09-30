@@ -20,6 +20,7 @@ from anytype.utils import (
 from anytype.markdown import (
     MarkdownRenderer
 )
+import datetime
 
 # short cut
 PQ = PageQuery
@@ -43,4 +44,5 @@ def sandbox(
 ) -> None:
     # space require query
     srq = [query_session, space_id]  # noqa
+    #print(code)
     exec(code)

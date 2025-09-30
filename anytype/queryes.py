@@ -230,6 +230,18 @@ class TagQuery(SpaceRequireQuery):
     def get_ids_by_names(
         self, names: list[str], prop_id: str | None = None
     ) -> list[str]:
+        tags_id = []
+        tags = self.get_all(prop_id=prop_id)["data"]
+        for name in names:
+            f = False
+            for tag in tags:
+                if name == tag["name"]:
+                    tags_id.append(tag["id"])
+                    f = True
+            if not f:
+                tags_id.append(
+                    self.create(name, prop_id=prop_id)["tag"]["id"]
+                )
         return [
             tag["id"]
             for tag in self.get_all(prop_id=prop_id)["data"]

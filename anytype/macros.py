@@ -18,6 +18,7 @@ def replace_include_script(
     script_name: str,
     code: str,
     pragma_once: list,
+    namespace: dict,
 ) -> tuple[str, list]:
     pragma_once.append(script_name)
     lines = code.split("\n")
@@ -30,10 +31,20 @@ def replace_include_script(
             if link in pragma_once:
                 new_line = ""
             else:
-                new_line = f'exec(namespace["{link}"])'
+                #new_line = f'exec(namespace["{link}"])'
+                new_line = namespace[link]
                 pragma_once.append(link)
         new_lines.append(new_line)
-    return ("\n".join(new_lines), pragma_once)
+    finish_code = "\n".join(new_lines)
+    if "include" in finish_code:
+        return replace_include_script(
+            script_name=script_name,
+            code=finish_code,
+            pragma_once=pragma_once,
+            namespace=namespace,
+        )
+    else:
+        return (finish_code, pragma_once)
 
 
 def replace_include(namespace: dict) -> dict:
@@ -43,6 +54,7 @@ def replace_include(namespace: dict) -> dict:
             key,
             namespace[key],
             pragma_once,
+            namespace,
         )
     return namespace
 
@@ -66,12 +78,12 @@ def pyrun(arvg: list[str] | None = None) -> None:
         code = anytype.utils.extract_code_in_markdown(
             page["object"]["markdown"]
         )
-        code = code[code.index("#") :]
+        code = code[code.index("#"):]
         scripts.append(code)
     namespace, mains = init_namespace(scripts)
     namespace = replace_include(namespace)
     for main in mains:
-        main_code = replace_include_script("__main__", main, [])[0]
+        main_code = replace_include_script("__main__", main, [], namespace)[0]
         anytype.sandbox.sandbox(
             code=main_code,
             query_session=query_session,
